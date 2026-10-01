@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter '*' run dev",
+    "dev": "pnpm -r --parallel run dev",
     "build": "pnpm -r run build",
     "typecheck": "pnpm -r --if-present run typecheck",
     "lint": "pnpm -r --if-present run lint"
