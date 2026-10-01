@@ -4,6 +4,7 @@
  */
 import { count, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
+import { generateThreads } from '../agent.js';
 import { checkCredentials, createSessionValue, requireAdmin, SESSION_COOKIE, sessionCookieOptions } from '../auth.js';
 import { db } from '../db.js';
 import { threads, topics } from '../schema.js';
@@ -78,6 +79,28 @@ export async function adminRoutes(app: FastifyInstance) {
           return reply.code(409).send({ message: 'Topic already exists' });
         }
         return reply.code(201).send(topic);
+      },
+    );
+
+    admin.post<{ Params: { id: number } }>(
+      '/topics/:id/generate',
+      { schema: { params: idParamsSchema } },
+      async (request, reply) => {
+        const topic = db.select().from(topics).where(eq(topics.id, request.params.id)).get();
+        if (!topic) {
+          return reply.code(404).send({ message: 'Topic not found' });
+        }
+
+        try {
+          const created = await generateThreads(topic);
+          request.log.info({ topic: topic.name, created: created.length }, 'thread agent finished');
+          return { threads: created };
+        } catch (error) {
+          // Upstream errors carry their own status (e.g. OpenRouter 401), which must not look like an admin 401
+          request.log.error(error, 'thread agent failed');
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          return reply.code(502).send({ message: `Thread agent failed: ${message}` });
+        }
       },
     );
 

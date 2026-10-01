@@ -11,6 +11,8 @@ export const topics = sqliteTable('topics', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
+export type Topic = typeof topics.$inferSelect;
+
 export const threads = sqliteTable('threads', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   topicId: integer('topic_id')
