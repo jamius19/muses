@@ -5,6 +5,7 @@
 import { ThemeToggle } from "@/components/theme-toggle"
 import { getThreads } from "@/lib/api"
 import { timeAgo } from "@/lib/time"
+import { domain } from "@/lib/url"
 
 const metadataLinkClass =
   "transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
@@ -49,16 +50,23 @@ export default async function Page() {
             </span>
             <div className="min-w-0">
               <a
-                href={`/thread/${thread.id}`}
+                href={thread.url ?? `/thread/${thread.id}`}
                 className="text-[15px] leading-snug font-normal text-foreground transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 {thread.title}
               </a>
               <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
-                <span className="text-orange-600 dark:text-orange-400">
-                  {thread.topic}
-                </span>
-                <span aria-hidden="true">·</span>
+                {thread.type === "link" && thread.url && (
+                  <>
+                    <a
+                      href={thread.url}
+                      className="text-orange-600 hover:underline dark:text-orange-400"
+                    >
+                      {domain(thread.url)}
+                    </a>
+                    <span aria-hidden="true">·</span>
+                  </>
+                )}
                 <a
                   href={`/user/${thread.author}`}
                   className={metadataLinkClass}

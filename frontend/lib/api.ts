@@ -8,7 +8,9 @@ export const API_URL =
 
 export interface Thread {
   id: number
+  type: "text" | "link"
   title: string
+  url: string | null
   author: string
   topic: string
   createdAt: string
@@ -17,6 +19,8 @@ export interface Thread {
 export interface Topic {
   id: number
   name: string
+  status: "pending" | "done" | "failed"
+  generationError: string | null
   createdAt: string
   threadCount: number
 }

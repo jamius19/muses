@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api, ApiError, type Thread, type Topic } from "@/lib/api"
 import { timeAgo } from "@/lib/time"
+import { domain } from "@/lib/url"
 
 import { LoginForm } from "./login-form"
 
@@ -21,7 +22,6 @@ export default function AdminPage() {
   const [topics, setTopics] = useState<Topic[]>([])
   const [threads, setThreads] = useState<Thread[]>([])
   const [topicName, setTopicName] = useState("")
-  const [generatingId, setGeneratingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleError = useCallback((error: unknown) => {
@@ -51,6 +51,17 @@ export default function AdminPage() {
     load()
   }, [load])
 
+  // Threads are generated in the background after a topic is added; poll until it settles
+  const generating = topics.some((topic) => topic.status === "pending")
+
+  useEffect(() => {
+    if (!generating) {
+      return
+    }
+    const timer = setInterval(load, 3000)
+    return () => clearInterval(timer)
+  }, [generating, load])
+
   async function run(action: () => Promise<unknown>) {
     setError(null)
     try {
@@ -70,14 +81,6 @@ export default function AdminPage() {
       })
       setTopicName("")
     })
-  }
-
-  async function generate(topic: Topic) {
-    setGeneratingId(topic.id)
-    await run(() =>
-      api(`/admin/topics/${topic.id}/generate`, { method: "POST" })
-    )
-    setGeneratingId(null)
   }
 
   async function deleteThread(thread: Thread) {
@@ -135,20 +138,27 @@ export default function AdminPage() {
                   key={topic.id}
                   className="flex items-center justify-between gap-3 py-2 text-sm"
                 >
-                  <span>
-                    {topic.name}
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {topic.threadCount} threads
+                  <span>{topic.name}</span>
+                  {topic.status === "pending" && (
+                    <span className="text-xs text-muted-foreground">
+                      Generating…
                     </span>
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={generatingId !== null}
-                    onClick={() => generate(topic)}
-                  >
-                    {generatingId === topic.id ? "Generating…" : "Generate"}
-                  </Button>
+                  )}
+                  {topic.status === "done" && (
+                    <span className="text-xs text-muted-foreground">
+                      {topic.threadCount === 1
+                        ? "1 thread"
+                        : `${topic.threadCount} threads`}
+                    </span>
+                  )}
+                  {topic.status === "failed" && (
+                    <span
+                      className="min-w-0 truncate text-xs text-destructive"
+                      title={topic.generationError ?? undefined}
+                    >
+                      Failed: {topic.generationError}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -170,8 +180,9 @@ export default function AdminPage() {
                   <div className="min-w-0">
                     <p className="text-sm">{thread.title}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {thread.topic} · {thread.author} ·{" "}
-                      {timeAgo(thread.createdAt)}
+                      {thread.topic} ·{" "}
+                      {thread.url ? domain(thread.url) : "text"} ·{" "}
+                      {thread.author} · {timeAgo(thread.createdAt)}
                     </p>
                   </div>
                   <Button
