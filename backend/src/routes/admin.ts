@@ -8,13 +8,7 @@ import { enqueueThreadGeneration } from '../agent.js';
 import { checkCredentials, createSessionValue, requireAdmin, SESSION_COOKIE, sessionCookieOptions } from '../auth.js';
 import { db } from '../db.js';
 import { threads, topics } from '../schema.js';
-import { latestThreads } from './threads.js';
-
-const idParamsSchema = {
-  type: 'object',
-  required: ['id'],
-  properties: { id: { type: 'integer' } },
-};
+import { idParamsSchema, latestThreads } from './threads.js';
 
 const loginBodySchema = {
   type: 'object',
