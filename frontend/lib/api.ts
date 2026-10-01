@@ -16,6 +16,10 @@ export interface Thread {
   createdAt: string
 }
 
+export interface ThreadDetail extends Thread {
+  body: string | null
+}
+
 export interface Topic {
   id: number
   name: string
@@ -52,4 +56,8 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export function getThreads() {
   return api<Thread[]>("/threads", { cache: "no-store" })
+}
+
+export function getThread(id: string) {
+  return api<ThreadDetail>(`/threads/${id}`, { cache: "no-store" })
 }

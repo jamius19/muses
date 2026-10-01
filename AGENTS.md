@@ -19,6 +19,7 @@ pnpm workspace (pnpm 11, Node >= 22), single root lockfile:
 
 - `frontend/` — Next.js 16.3.4 (App Router, Turbopack), scaffolded with the shadcn `base-mira` preset. Tailwind CSS 4, React 19. Dev server: `:3000`.
   - `/` server component, fetches `GET /threads` from the backend (`cache: 'no-store'`).
+  - `/thread/[id]` server component, fetches `GET /threads/:id` (404 → `notFound()`).
   - `/admin` client component, calls the backend directly from the browser (`credentials: 'include'`).
   - Backend URL: `NEXT_PUBLIC_BACKEND_URL` (default `http://localhost:3001`), see `frontend/.env.example`.
 - `backend/` — Fastify 5, TypeScript, strict ESM (`NodeNext`). Port `3001` (`PORT`/`HOST` env overridable).
