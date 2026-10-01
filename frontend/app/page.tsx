@@ -3,13 +3,20 @@
  * Since: 16/09/2026
  */
 import { ThemeToggle } from "@/components/theme-toggle"
-import { homepageData } from "@/lib/homepage-data"
+import { getThreads } from "@/lib/api"
+import { timeAgo } from "@/lib/time"
 
 const metadataLinkClass =
   "transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 
-export default function Page() {
-  const { weekday, day, month, year, stories } = homepageData
+export default async function Page() {
+  const threads = await getThreads()
+
+  const now = new Date()
+  const weekday = now.toLocaleDateString("en-US", { weekday: "long" })
+  const day = now.getDate()
+  const month = now.toLocaleDateString("en-US", { month: "long" })
+  const year = now.getFullYear()
 
   return (
     <div className="mx-auto min-h-svh max-w-2xl px-4 md:px-6 md:pt-8 pt-6 pb-16">
@@ -30,41 +37,39 @@ export default function Page() {
 
       <hr className="mt-6 border-border" />
 
+      {threads.length === 0 && (
+        <p className="mt-6 text-sm text-muted-foreground">No threads yet.</p>
+      )}
+
       <ol className="mt-6 space-y-5">
-        {stories.map((story, index) => (
-          <li key={story.id} className="flex gap-3 text-sm">
+        {threads.map((thread, index) => (
+          <li key={thread.id} className="flex gap-3 text-sm">
             <span className="w-3.5 shrink-0 pt-0.5 text-right text-muted-foreground">
               {index + 1}.
             </span>
             <div className="min-w-0">
               <a
-                href={story.titleHref ?? story.commentsHref}
+                href={`/thread/${thread.id}`}
                 className="text-[15px] leading-snug font-normal text-foreground transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
-                {story.title}
+                {thread.title}
               </a>
               <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
-                {story.source && (
-                  <>
-                    <a
-                      href={story.sourceHref ?? "#"}
-                      className="text-orange-600 hover:underline dark:text-orange-400"
-                    >
-                      {story.source}
-                    </a>
-                    <span aria-hidden="true">·</span>
-                  </>
-                )}
-                <span>{story.points} points</span>
+                <span className="text-orange-600 dark:text-orange-400">
+                  {thread.topic}
+                </span>
                 <span aria-hidden="true">·</span>
-                <a href={story.authorHref} className={metadataLinkClass}>
-                  {story.author}
+                <a
+                  href={`/user/${thread.author}`}
+                  className={metadataLinkClass}
+                >
+                  {thread.author}
                 </a>
                 <span aria-hidden="true">·</span>
-                <span>{story.age}</span>
+                <span>{timeAgo(thread.createdAt)}</span>
                 <span aria-hidden="true">·</span>
-                <a href={story.commentsHref} className={metadataLinkClass}>
-                  {story.commentCount} comments
+                <a href={`/thread/${thread.id}`} className={metadataLinkClass}>
+                  discuss
                 </a>
               </p>
             </div>
