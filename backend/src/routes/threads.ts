@@ -11,7 +11,9 @@ export function latestThreads(limit: number) {
   return db
     .select({
       id: threads.id,
+      type: threads.type,
       title: threads.title,
+      url: threads.url,
       author: threads.author,
       topic: topics.name,
       createdAt: threads.createdAt,

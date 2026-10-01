@@ -5,6 +5,7 @@
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
+import { resumePendingGenerations } from './agent.js';
 import { env } from './env.js';
 import { adminRoutes } from './routes/admin.js';
 import { threadRoutes } from './routes/threads.js';
@@ -31,4 +32,5 @@ server.listen({ port, host }, (err, address) => {
     process.exit(1);
   }
   server.log.info(`Server listening at ${address}`);
+  resumePendingGenerations(server.log);
 });
