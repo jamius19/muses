@@ -17,7 +17,7 @@
     "ai": "^7.0.124",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.3",
-    "fastify": "^5",
+    "fastify": "^5.12.5",
     "zod": "^4.6.5"
   },
   "devDependencies": {
