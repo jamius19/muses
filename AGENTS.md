@@ -9,7 +9,7 @@ Instructions for AI coding agents working in this repository. Also check nested 
 Intended pipeline:
 
 1. Topic submission — implemented: admin adds broad topics (e.g. "Unity") in `/admin`
-2. Thread creation from topics — implemented: admin clicks Generate, an AI agent writes threads shown on `/`
+2. Thread creation from topics — implemented: submitting a topic queues a background agent run that writes one thread (text or link) shown on `/`
 3. Comment generation and replies (AI agents) — planned
 4. User accounts, posting, and commenting — planned
 
@@ -25,7 +25,8 @@ pnpm workspace (pnpm 11, Node >= 22), single root lockfile:
   - SQLite via Drizzle ORM + better-sqlite3 (`src/schema.ts`, `src/db.ts`). Migrations in `backend/drizzle/` are applied on startup.
   - Admin auth (`src/auth.ts`): fixed username/password from env, signed httpOnly `admin_session` cookie (`@fastify/cookie`).
   - CORS (`@fastify/cors`) allows `CORS_ORIGIN` (default `http://localhost:3000`) with credentials.
-  - Thread agent (`src/agent.ts`): Vercel AI SDK v7 `ToolLoopAgent` on OpenRouter (OpenAI-compatible endpoint) with `listExistingThreads`/`createThread` tools.
+  - Thread agent (`src/agent.ts`): Vercel AI SDK v7 `ToolLoopAgent` on OpenRouter (OpenAI-compatible endpoint) with `checkUrl`/`createThread` tools. Runs are queued one at a time; topic `status` is `pending` → `done`/`failed` (admin polls it), and `pending` topics are resumed on startup.
+  - Threads have `type` `text` (body required) or `link` (`url` required, must pass `checkUrl` in the same run; body optional).
   - Env: copy `backend/.env.example` to `backend/.env` (loaded via `--env-file`; required vars throw on startup if missing).
 
 ## Commands
@@ -42,7 +43,7 @@ Run from the repository root:
 
 Targeted: `pnpm --filter backend run dev`, `pnpm --filter frontend run ...`.
 
-After changing `backend/src/schema.ts`: `pnpm --filter backend run db:generate`, then commit the new migration.
+After changing `backend/src/schema.ts`: `pnpm --filter backend run db:generate`, review the SQL, then commit the new migration. drizzle-kit's SQLite table-rebuild migrations copy newly added columns from the old table; remove them from the `INSERT ... SELECT` (see `drizzle/0001_*.sql`).
 
 ## Gotchas
 
@@ -52,8 +53,9 @@ After changing `backend/src/schema.ts`: `pnpm --filter backend run db:generate`,
 - shadcn components: run `pnpm dlx shadcn@latest add <component>` from inside `frontend/`.
 - Backend has no tests and no lint script. Don't add these unprompted.
 - The admin cookie is `SameSite=Strict`: open the frontend and backend on the same hostname (`localhost` for both, not `127.0.0.1` for one), or the browser won't send it.
-- Don't set `content-type: application/json` on bodyless requests (`DELETE`, generate `POST`); Fastify rejects empty JSON bodies. `frontend/lib/api.ts` handles this.
-- `OPENROUTER_MODEL` must support tool calling. Agent failures return 502 so they aren't mistaken for an expired admin session (401).
+- Don't set `content-type: application/json` on bodyless requests (`DELETE`, `POST /admin/logout`); Fastify rejects empty JSON bodies. `frontend/lib/api.ts` handles this.
+- `OPENROUTER_MODEL` must support tool calling. Use an `:online` model so the agent can find real URLs for link threads; otherwise it mostly falls back to text threads. Agent failures are stored on the topic (`generationError`), not returned as HTTP errors.
+- `checkUrl` fetches model-chosen http(s) URLs from the backend host. Private/internal addresses are not blocked.
 
 ## Conventions
 
